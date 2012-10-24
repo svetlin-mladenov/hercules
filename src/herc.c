@@ -35,7 +35,7 @@ int main(int argc, char **argv) {
 	err = run_tests_in(target, &failing_tests, &tests_count);
 	if (err < 0) {
 		ret = err;
-		cprint(CPRINT_RED, "Error while trying to execute the tests\n");
+		cprint(CPRINT_RED, "Unexpected error while trying to execute the tests\n");
 	} else if (tests_count == 0) {
 		printf("No tests found in %s\n", target);
 		ret = 0;
@@ -58,7 +58,7 @@ int run_tests_in(const char *target, unsigned *failing_tests, unsigned *tests_co
 
 	err = stat(target, &target_stat);
 	if (err < 0) {
-		fprintf(stderr, "%s\n",  strerror(errno));
+		fprintf(stderr, "Stating %s failed: %s\n", target, strerror(errno));
 		return -1;
 	}
 
@@ -97,7 +97,7 @@ int try_running_tests_in_file(const char *file, unsigned *failing_tests, unsigne
 
 	handle = dlopen(file, RTLD_NOW);
 	if (handle == NULL) {
-		log_debug("Trying to dso load %s failed. Probably not a DSO", file);
+		log_debug("Trying to load %s failed: %s\n.", file, dlerror());
 		return 0;
 	}
 
