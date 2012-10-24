@@ -1,5 +1,4 @@
 add check for external dependencies in scons script
 add support for fork
-move herc.h to include/herc/herc.h
 Implement support for multi threaded tests
 Support for stack traces
