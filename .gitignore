@@ -1,0 +1,9 @@
+#build output
+*.o
+herc
+
+# scons
+.sconsign.dblite
+
+# vi
+.*~
