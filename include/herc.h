@@ -9,7 +9,7 @@
 #define HTEST(test_case, test_name) void  _HERC_MANGLE(test_case, _HERC_CASE_NAME_DELIMITER, test_name) ()
 
 
-#define assert_true(expr) if (!(expr)) {herc_fail("some better fail msg her");}
+#define assert_true(expr) if (!(expr)) {herc_fail("\"" #expr "\"" " expected to be true but was false");}
 
 void herc_fail(const char *);
 
