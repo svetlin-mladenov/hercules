@@ -13,19 +13,13 @@
 #include "test_finder.h"
 #include "test_runner.h"
 
+#include "logger.h"
+
 int run_tests_in(const char *, unsigned *, unsigned *);
 int try_running_tests_in_dso(const char *, void *, unsigned *, unsigned *);
 int try_running_tests_in_file(const char *, unsigned *, unsigned *);
 int try_running_tests_in_dir(const char *, unsigned *, unsigned *);
 struct list_testname *get_testnames_in_file(const char *);
-
-#define CPRINT_RED   "\033[31m"
-#define CPRINT_GREEN "\033[32m"
-#define CPRINT_STOP  "\033[0m"
-
-#define cprint(color, msg, ...) printf("%s" msg CPRINT_STOP, (color), ##__VA_ARGS__) 
-
-#define log_debug(msg, ...) printf(msg "\n", ##__VA_ARGS__)
 
 int main(int argc, char **argv) {
 	const char *target;
