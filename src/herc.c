@@ -131,13 +131,12 @@ int run_test(void *handle, const char *test_name, unsigned *failing_tests, unsig
 		return -1;
 	}	
 
-	printf("Running test %s... ", test_name);
 	(*tests_count)++;
 	if (test_runner_run_test(test) < 0) {
-		printf("%s \n", test_runner_get_fail_msg());
+		cprint(CPRINT_RED, "Running test %s... %s\n", test_name, test_runner_get_fail_msg());
 		(*failing_tests)++;
 	} else {
-		printf("OK\n");
+		printf("Running test %s... OK\n", test_name);
 	}
 
 	return 0;
