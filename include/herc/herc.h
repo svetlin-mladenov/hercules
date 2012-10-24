@@ -10,14 +10,19 @@
 
 #define HTEST(test_case, test_name) void  _HERC_MANGLE(test_case, _HERC_CASE_NAME_DELIMITER, test_name) ()
 
+void herc_fail(const char *, ...);
+
+#define _HERC_STR_EXPR(expr) "\"" #expr "\""
+
 /*************
  * assertions *
  *************/
 
-#define assert_true(expr) if (!(expr)) {herc_fail("\"" #expr "\"" " expected to be true but was false");}
+#define assert_true(expr) if (!(expr)) {herc_fail(_HERC_STR_EXPR(expr) " expected to be true but was false");}
 
-#define assert_not_null(expr) if ((expr)==NULL) {herc_fail("\"" #expr "\"" " expected to be NULL but it isn't");}
+#define assert_not_null(expr) if ((expr)==NULL) {herc_fail(_HERC_STR_EXPR(expr) " expected to be NULL but it isn't");}
 
-void herc_fail(const char *);
+#define assert_eq(exp, act) if ((exp)!=(act)) {herc_fail(_HERC_STR_EXPR(exp) " expected to be equal to " _HERC_STR_EXPR(act) " but it isn't");}
+
 
 #endif 

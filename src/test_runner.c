@@ -1,13 +1,22 @@
+#define _GNU_SOURCE
+
 #include "test_runner.h"
 
 #include <setjmp.h>
+#include <stdlib.h>
+#include <stdio.h>
+#include <stdarg.h>
 
 jmp_buf abort_test_point;
 
-/*TODO move to a separte file*/
-const char *errmsg; /*TODO used a seperate buffer */
+char *errmsg = NULL;
 
 int test_runner_run_test(test_fn test) {
+	if (errmsg != NULL) {
+		free(errmsg);
+		errmsg = NULL;
+	}
+
         int v = setjmp(abort_test_point);
         if (v) {
                 /*the test has failed*/
@@ -18,8 +27,21 @@ int test_runner_run_test(test_fn test) {
         }
 }
 
-void herc_fail(const char *msg) {
-        errmsg = msg;
+void herc_fail(const char *msg, ...) {
+	if (errmsg != NULL) {
+		fprintf(stderr, "UNEXPECTED STATE: failing twice in the same method. That could be a bug in Hercules or in you client application.\n");
+		/* may be free errmsg here just in case */
+		errmsg = NULL;
+	}
+	
+	va_list ap;
+	va_start(ap, msg);
+	if (vasprintf(&errmsg, msg, ap) < 0) {
+		fprintf(stderr, "Formatting the fail messaged failed. The message is %s\n", msg);
+		errmsg = NULL;
+	}
+	va_end(ap);
+        
         longjmp(abort_test_point, 1);
 }
 
