@@ -1,7 +1,7 @@
 #ifndef TEST_RUNNER_H
 #define TEST_RUNNER_H
 
-#include "herc.h"
+#include "herc/herc.h"
 
 typedef void (*test_fn) (void);
 

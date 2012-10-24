@@ -1,3 +1,3 @@
-#include "herc.h"
+#include "herc/herc.h"
 #include "exported.h"
 
