@@ -109,7 +109,7 @@ int try_running_tests_in_file(const char *file, unsigned *failing_tests, unsigne
 	return err;
 }
 
-int run_test(void *, const char *, unsigned *, unsigned *);
+int run_test(void *, test_desc *, unsigned *, unsigned *);
 
 int try_running_tests_in_dso(const char *file, void *handle, unsigned *failing_tests, unsigned *tests_count) {
 	struct cr_list *tests = get_testnames_in_file(file);
@@ -117,7 +117,7 @@ int try_running_tests_in_dso(const char *file, void *handle, unsigned *failing_t
 	cr_list_iter *iter = cr_list_iter_create(tests);
 	while (!cr_list_iter_past_end(iter)) {
 		test_desc *test = (test_desc*)cr_list_iter_get(iter);
-		run_test(handle, test->symname, failing_tests, tests_count); 
+		run_test(handle, test, failing_tests, tests_count); 
 		cr_list_iter_next(iter);
 	}
 	cr_list_iter_free(iter);
@@ -127,8 +127,8 @@ int try_running_tests_in_dso(const char *file, void *handle, unsigned *failing_t
 	return 0;
 }
 
-int run_test(void *handle, const char *test_name, unsigned *failing_tests, unsigned *tests_count) {
-	test_fn test = (test_fn)(intptr_t) dlsym(handle, test_name);
+int run_test(void *handle, test_desc *desc, unsigned *failing_tests, unsigned *tests_count) {
+	test_fn test = (test_fn)(intptr_t) dlsym(handle, desc->symname);
 	if (test == NULL) {
 		fprintf(stderr, "error while looking up symbol: %s\n", dlerror());
 		return -1;
@@ -136,10 +136,10 @@ int run_test(void *handle, const char *test_name, unsigned *failing_tests, unsig
 
 	(*tests_count)++;
 	if (test_runner_run_test(test) < 0) {
-		cprint(CPRINT_RED, "Running test %s... %s\n", test_name, test_runner_get_fail_msg());
+		cprint(CPRINT_RED, "Running test %s::%s... %s\n", desc->suit, desc->test, test_runner_get_fail_msg());
 		(*failing_tests)++;
 	} else {
-		printf("Running test %s... OK\n", test_name);
+		printf("Running test %s::%s... OK\n", desc->suit, desc->test);
 	}
 
 	return 0;

@@ -4,7 +4,8 @@
 #include <stdlib.h>
 #include <stdint.h>
 
-#define _HERC_CASE_NAME_DELIMITER _D5a_
+#define _HERC_CASE_NAME_DELIMITER      _D5a_
+#define _HERC_CASE_NAME_DELIMITER_STR "_D5a_"
 
 //NOTE if you change the manglin schema you must also change the demangling schema in hercules-source-tree/src/mangler.c
 #define _HERC_MANGLE(test_case, delimiter, test_name) __HtEsT_ ## test_case ## _D5a_ ## test_name

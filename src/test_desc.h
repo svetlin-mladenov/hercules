@@ -3,6 +3,8 @@
 
 typedef struct test_desc {
 	char *symname;
+	char *suit;
+	char *test;
 } test_desc;
 
 test_desc *test_desc_create(const char *);
