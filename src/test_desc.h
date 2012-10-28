@@ -2,7 +2,7 @@
 #define TEST_DESC_H
 
 typedef struct test_desc {
-	char *testname;
+	char *symname;
 } test_desc;
 
 test_desc *test_desc_create(const char *);

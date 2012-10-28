@@ -117,7 +117,7 @@ int try_running_tests_in_dso(const char *file, void *handle, unsigned *failing_t
 	cr_list_iter *iter = cr_list_iter_create(tests);
 	while (!cr_list_iter_past_end(iter)) {
 		test_desc *test = (test_desc*)cr_list_iter_get(iter);
-		run_test(handle, test->testname, failing_tests, tests_count); 
+		run_test(handle, test->symname, failing_tests, tests_count); 
 		cr_list_iter_next(iter);
 	}
 	cr_list_iter_free(iter);
