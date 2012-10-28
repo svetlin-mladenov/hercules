@@ -3,7 +3,9 @@
 
 #include "list_testname.h"
 
-struct list_testname *get_testnames_in_file(const char *);
+struct cr_list;
+
+struct cr_list *get_testnames_in_file(const char *);
 
 #endif
 

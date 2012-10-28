@@ -10,9 +10,13 @@
 #include <unistd.h>
 #include <fcntl.h>
 
-#include "mangler.h"
+#include <cryad/list.h>
+#include <cryad/slist.h>
 
-struct list_testname *get_testnames_in_file(const char *file) {
+#include "mangler.h"
+#include "test_desc.h"
+
+struct cr_list *get_testnames_in_file(const char *file) {
 	//for more info see http://sourceforge.net/apps/trac/elftoolchain/browser/trunk/readelf/readelf.c dump_symtab
 	Elf *e;
 	GElf_Sym sym;
@@ -24,8 +28,8 @@ struct list_testname *get_testnames_in_file(const char *file) {
 
 	char *sym_name;
 
-        struct list_testname *list;
-        
+	cr_list *list = cr_slist_create((void (*)(void*))test_desc_free);
+
 	if (elf_version(EV_CURRENT) == EV_NONE) {
 		warnx("ELF initialization failed: %s", elf_errmsg(-1));
 		return NULL;
@@ -46,7 +50,6 @@ struct list_testname *get_testnames_in_file(const char *file) {
 		return NULL;
 	}
 	
-	list = list_testname_create();
 	scn = NULL;
 	while ((scn = elf_nextscn(e, scn)) != NULL) {
 		if (gelf_getshdr(scn, &shdr) != &shdr) {
@@ -64,7 +67,7 @@ struct list_testname *get_testnames_in_file(const char *file) {
 				//TODO check if the symbol is a function
 				sym_name = elf_strptr(e, shdr.sh_link, sym.st_name);
 				if (mangler_is_test(sym_name)) {
-					list_testname_add(list, strdup(sym_name));
+					cr_list_add(list, test_desc_create(sym_name));
 				}
 			}	
 		}

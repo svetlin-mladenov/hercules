@@ -9,9 +9,13 @@
 
 #include <dlfcn.h>
 
+#include <cryad/list.h>
+#include <cryad/slist.h>
+
 #include "list_testname.h"
 #include "test_finder.h"
 #include "test_runner.h"
+#include "test_desc.h"
 
 #include "logger.h"
 
@@ -19,7 +23,6 @@ int run_tests_in(const char *, unsigned *, unsigned *);
 int try_running_tests_in_dso(const char *, void *, unsigned *, unsigned *);
 int try_running_tests_in_file(const char *, unsigned *, unsigned *);
 int try_running_tests_in_dir(const char *, unsigned *, unsigned *);
-struct list_testname *get_testnames_in_file(const char *);
 
 int main(int argc, char **argv) {
 	const char *target;
@@ -110,17 +113,18 @@ int try_running_tests_in_file(const char *file, unsigned *failing_tests, unsigne
 int run_test(void *, const char *, unsigned *, unsigned *);
 
 int try_running_tests_in_dso(const char *file, void *handle, unsigned *failing_tests, unsigned *tests_count) {
-	struct list_testname *tests = get_testnames_in_file(file);
+	struct cr_list *tests = get_testnames_in_file(file);
 	
-	struct list_testname_item *test = list_testname_first(tests);
-
-	while (test != NULL) {
+	cr_list_iter *iter = cr_list_iter_create(tests);
+	while (!cr_list_iter_past_end(iter)) {
+		test_desc *test = (test_desc*)cr_list_iter_get(iter);
 		run_test(handle, test->testname, failing_tests, tests_count); 
-		test = list_testname_next(test);
+		cr_list_iter_next(iter);
 	}
+	cr_list_iter_free(iter);
 
 
-	list_testname_free(tests);
+	cr_list_free(tests);
 	return 0;
 }
 
