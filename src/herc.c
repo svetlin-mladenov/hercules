@@ -12,7 +12,6 @@
 #include <cryad/list.h>
 #include <cryad/slist.h>
 
-#include "list_testname.h"
 #include "test_finder.h"
 #include "test_runner.h"
 #include "test_desc.h"
