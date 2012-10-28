@@ -2,6 +2,7 @@
 #define HERC_HERC_H
 
 #include <stdlib.h>
+#include <stdint.h>
 
 #define _HERC_CASE_NAME_DELIMITER _D5a_
 
@@ -20,9 +21,20 @@ void herc_fail(const char *, ...);
 
 #define assert_true(expr) if (!(expr)) {herc_fail(_HERC_STR_EXPR(expr) " expected to be true but was false");}
 
-#define assert_not_null(expr) if ((expr)==NULL) {herc_fail(_HERC_STR_EXPR(expr) " expected to be NULL but it isn't");}
+#define assert_not_null(expr) if ((expr)==NULL) {herc_fail(_HERC_STR_EXPR(expr) " expected NOT to be NULL but it is");}
 
-#define assert_eq(exp, act) if ((exp)!=(act)) {herc_fail(_HERC_STR_EXPR(exp) " expected to be equal to " _HERC_STR_EXPR(act) " but it isn't");}
+#define assert_null(expr) if ((expr)!=NULL) {herc_fail(_HERC_STR_EXPR(expr) " expected to be NULL bit it isn't");}
+
+#define assert_eq(exp, act) if ((exp)!=(act)) {herc_fail(_HERC_STR_EXPR(act) " expected to be equal to " _HERC_STR_EXPR(exp) " but it isn't");}
+
+#define assert_eqi(exp, act) \
+	do {\
+		intmax_t exp_val = (exp); \
+		intmax_t act_val = (act); \
+		if (exp_val != act_val) {\
+			herc_fail(_HERC_STR_EXPR(act) "(value: %jd) expected to be equal to " _HERC_STR_EXPR(exp) "(value: %jd) but it isn't", act_val, exp_val); \
+		} \
+	} while(0);
 
 
 #endif 
