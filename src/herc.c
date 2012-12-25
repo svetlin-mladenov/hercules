@@ -93,11 +93,31 @@ int try_running_tests_in_dir(const char *target, unsigned *failing_tests, unsign
 	return 0;
 }
 
+void *dlopen_file(const char *filename, int flag) {
+	char *rel_filename;
+	void *handle;
+	if(strchr(filename, '/') == NULL) {
+		// filename is NOT a path so dlopen will try to search for it as if it's a shared library
+		// using the same search pattern as ld however we don't what this behavour so we go around it
+		// by prepending a ./ to filename
+		rel_filename = malloc(strlen(filename) + 3);
+		strcpy(rel_filename, "./"),
+		strcat(rel_filename, filename);
+		handle = dlopen(rel_filename, flag);
+		free(rel_filename);
+		return handle;
+	} else {
+		// filename is relative or absolute path and dlopen will search for it in the current dir
+		// so there is no need to do anything special except just calling dlopen
+		return dlopen(filename, flag);
+	}
+}
+
 int try_running_tests_in_file(const char *file, unsigned *failing_tests, unsigned *tests_count) {
 	void *handle;
 	int err;
 
-	handle = dlopen(file, RTLD_NOW);
+	handle = dlopen_file(file, RTLD_NOW);
 	if (handle == NULL) {
 		log_debug("Trying to load %s failed: %s\n.", file, dlerror());
 		return 0;
