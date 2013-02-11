@@ -3,6 +3,7 @@
 
 #include <stdlib.h>
 #include <stdint.h>
+#include <string.h>
 
 #define _HERC_CASE_NAME_DELIMITER      _D5a_
 #define _HERC_CASE_NAME_DELIMITER_STR "_D5a_"
@@ -35,6 +36,13 @@ void herc_fail(const char *, ...);
 		if (exp_val != act_val) {\
 			herc_fail(_HERC_STR_EXPR(act) "(value: %jd) expected to be equal to " _HERC_STR_EXPR(exp) "(value: %jd) but it isn't", act_val, exp_val); \
 		} \
+	} while(0);
+
+#define assert_eqmem(ptr_exp, ptr_act, len) \
+	do { \
+		if (memcmp(ptr_exp, ptr_act, len) != 0) {\
+			herc_fail("Memeory at " _HERC_STR_EXPR(ptr_exp) "(addr: %p, len: %d) is no equal to memory at " _HERC_STR_EXPR(ptr_act) "(addr: %p, len: %d)", ptr_exp, len, ptr_act, len); \
+		}\
 	} while(0);
 
 
