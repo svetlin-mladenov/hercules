@@ -1,5 +1,3 @@
-Remove cryad
-
 add check for external dependencies in scons script
 add support for fork
 Implement support for multi threaded tests
