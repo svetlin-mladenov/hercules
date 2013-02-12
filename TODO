@@ -8,3 +8,5 @@ XML output
 IO redirection
 Fixtures
 Add support for timeouts
+Colors should be switchable
+Add support for running only particular tests and/or suites
