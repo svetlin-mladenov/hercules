@@ -5,6 +5,7 @@
 
 #include <sys/types.h>
 #include <sys/stat.h>
+#include <sys/time.h>
 #include <unistd.h>
 
 #include <dlfcn.h>
@@ -148,6 +149,10 @@ int try_running_tests_in_dso(const char *file, void *handle, unsigned *failing_t
 }
 
 int run_test(void *handle, test_desc *desc, unsigned *failing_tests, unsigned *tests_count) {
+	struct timeval tv_start, tv_end;
+	double ellapsed_time;
+	int err = 0;
+
 	test_fn test = (test_fn)(intptr_t) dlsym(handle, desc->symname);
 	if (test == NULL) {
 		fprintf(stderr, "error while looking up symbol: %s\n", dlerror());
@@ -155,11 +160,15 @@ int run_test(void *handle, test_desc *desc, unsigned *failing_tests, unsigned *t
 	}	
 
 	(*tests_count)++;
-	if (test_runner_run_test(test) < 0) {
-		cprint(CPRINT_RED, "Running test %s::%s... %s\n", desc->suit, desc->test, test_runner_get_fail_msg());
+	gettimeofday(&tv_start, NULL);
+	err = test_runner_run_test(test);
+	gettimeofday(&tv_end, NULL);
+	ellapsed_time = (float)(tv_end.tv_sec - tv_start.tv_sec) + (tv_end.tv_usec - tv_start.tv_usec)/1000000.0;
+	if (err < 0) {
+		cprint(CPRINT_RED, "Running test %s::%s... [%.2f s] %s\n", desc->suit, desc->test, ellapsed_time, test_runner_get_fail_msg());
 		(*failing_tests)++;
 	} else {
-		printf("Running test %s::%s... OK\n", desc->suit, desc->test);
+		printf("Running test %s::%s... [%.2f s] OK\n", desc->suit, desc->test, ellapsed_time);
 	}
 
 	return 0;

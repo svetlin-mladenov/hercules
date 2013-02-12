@@ -4,7 +4,7 @@ Implement support for multi threaded tests
 Support for stack traces
 Ass handling of SEGFAULTS
 better assert_eqmem -> showing a hex diff metween the two memeory buffers
-Timings
 XML output
 IO redirection
 Fixtures
+Add support for timeouts
