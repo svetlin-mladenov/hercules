@@ -1,4 +1,4 @@
 #!/bin/sh
 
-gcc -o prog.tests simple_tests.c -shared -fPIC -Wall -pedantic  
+gcc -o tests simple_tests.c -Wall -pedantic  -lherc -rdynamic
 

@@ -1,5 +1,7 @@
 #build output
 *.o
+*.os
+*.so
 herc
 
 # scons

@@ -13,3 +13,5 @@ Add support for running only particular tests and/or suites
 TOTAL Time for tests in a suite and a case
 add a demo
 eliminate the need for compiling a separate dso file -- herc.so herc_main.so
+
+eliminate the -rdynamic in SConstruct and when building the client tests

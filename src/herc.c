@@ -29,11 +29,7 @@ int main(int argc, char **argv) {
 	unsigned failing_tests, tests_count;
 	int err, ret;
 	
-	if (argc > 1) {
-		target = argv[1];
-	} else {
-		target = ".";
-	}	
+	target = argv[0];
 
 	err = run_tests_in(target, &failing_tests, &tests_count);
 	if (err < 0) {
@@ -95,7 +91,8 @@ int try_running_tests_in_dir(const char *target, unsigned *failing_tests, unsign
 }
 
 void *dlopen_file(const char *filename, int flag) {
-	char *rel_filename;
+	return dlopen(NULL, flag);
+	/*char *rel_filename;
 	void *handle;
 	if(strchr(filename, '/') == NULL) {
 		// filename is NOT a path so dlopen will try to search for it as if it's a shared library
@@ -111,7 +108,7 @@ void *dlopen_file(const char *filename, int flag) {
 		// filename is relative or absolute path and dlopen will search for it in the current dir
 		// so there is no need to do anything special except just calling dlopen
 		return dlopen(filename, flag);
-	}
+	}*/
 }
 
 int try_running_tests_in_file(const char *file, unsigned *failing_tests, unsigned *tests_count) {
