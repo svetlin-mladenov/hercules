@@ -3,6 +3,7 @@
 *.os
 *.so
 herc
+demo.tests
 
 # scons
 .sconsign.dblite
