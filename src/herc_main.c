@@ -1,3 +1,5 @@
+#include "herc_main.h"
+
 #include <stdio.h>
 #include <string.h>
 #include <errno.h>
@@ -24,7 +26,7 @@ int try_running_tests_in_dso(const char *, void *, unsigned *, unsigned *);
 int try_running_tests_in_file(const char *, unsigned *, unsigned *);
 int try_running_tests_in_dir(const char *, unsigned *, unsigned *);
 
-int main(int argc, char **argv) {
+int herc_main(int argc, char **argv) {
 	const char *target;
 	unsigned failing_tests, tests_count;
 	int err, ret;
