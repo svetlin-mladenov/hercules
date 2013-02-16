@@ -20,16 +20,39 @@
 #include "test_desc.h"
 
 #include "logger.h"
+#include "herr.h"
 
+#include "branch_annotation.h"
+
+int herc_run(int argc, char **argv);
 int run_tests_in(const char *, unsigned *, unsigned *);
 int try_running_tests_in_dso(const char *, void *, unsigned *, unsigned *);
 int try_running_tests_in_file(const char *, unsigned *, unsigned *);
 int try_running_tests_in_dir(const char *, unsigned *, unsigned *);
 
+err_t parse_cdm_args(int argc, char **argv);
+
 int herc_main(int argc, char **argv) {
+	err_t err;
+
+	err = parse_cdm_args(argc, argv);
+	if (unlikely(err)) {
+		err_print(err);
+		err_free(err);
+		return 1;
+	}
+
+	return herc_run(argc, argv);
+}
+
+err_t parse_cdm_args(int argc, char **argv) {
+	return OK;
+}
+
+int herc_run(int argc, char **argv) {
 	const char *target;
-	unsigned failing_tests, tests_count;
-	int err, ret;
+        unsigned failing_tests, tests_count;
+        int err, ret;
 	
 	target = argv[0];
 
