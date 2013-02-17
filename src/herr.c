@@ -14,7 +14,12 @@ static err_t err_emergency_bad_format();
 
 void err_print(err_t err) {
 	fputs(err->msg, stderr);
-	fputc('\n', stderr);
+	if (err->cause) {
+		fputs("\nCaused by:", stderr);
+		err_print(err->cause);
+	} else {
+		fputc('\n', stderr);
+	}
 }
 
 void err_free(err_t err) {
@@ -23,7 +28,7 @@ void err_free(err_t err) {
 	}
 }
 
-err_t err_new(const char *fmt, ...) {
+err_t err_new(err_t cause, const char *fmt, ...) {
 	char *msg;
 	va_list args;
 	int ret;
@@ -43,6 +48,7 @@ err_t err_new(const char *fmt, ...) {
 
 	err->msg = msg;
 	err->allocated = 1;
+	err->cause = cause;
 	return err;
 }
 
@@ -57,5 +63,5 @@ static err_t err_emergency_nomem() {
 }
 
 static err_t err_emergency_bad_format(const char *fmt) {
-	return err_new("An unknown error occured while trying to create an error with error format message %s", fmt);
+	return err_new(NULL, "An unknown error occured while trying to create an error with error format message %s", fmt);
 }

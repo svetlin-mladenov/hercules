@@ -21,7 +21,7 @@ err_t logger_use_color(const char *str) {
 	} else if (strcmp("auto", str)==0) {
 		logger_auto_use_color();
 	} else {
-		return err_general("Invalide value for color: %s. Allowed values are 'always', 'never'", str);
+		return err_general(NULL, "Invalide value for color: %s. Allowed values are 'always', 'never'", str);
 	}
 
 	return OK;
