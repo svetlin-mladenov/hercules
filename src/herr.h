@@ -10,7 +10,7 @@ typedef struct err_error* err_t;
 
 #define OK NULL
 
-#define err_general(fmt, ...) err_new(fmt, __VA_ARGS_)
+#define err_general(fmt, ...) err_new(fmt, __VA_ARGS__)
 
 void err_print(err_t );
 

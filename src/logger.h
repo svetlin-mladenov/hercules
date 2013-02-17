@@ -5,8 +5,12 @@
 #define CPRINT_GREEN "\033[32m"
 #define CPRINT_STOP  "\033[0m"
 
-#define cprint(color, msg, ...) printf("%s" msg CPRINT_STOP, (color), ##__VA_ARGS__) 
+#include "herr.h"
 
-#define log_debug(msg, ...) printf(msg "\n", ##__VA_ARGS__)
+err_t logger_use_color(const char *str);
+
+void cprint(const char *color, const char *fmt, ...);
+
+void log_debug(const char *fmt, ...);
 
 #endif

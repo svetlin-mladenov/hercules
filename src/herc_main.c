@@ -24,6 +24,8 @@
 
 #include "branch_annotation.h"
 
+#include "herc_string_utils.h"
+
 int herc_run(int argc, char **argv);
 int run_tests_in(const char *, unsigned *, unsigned *);
 int try_running_tests_in_dso(const char *, void *, unsigned *, unsigned *);
@@ -36,7 +38,7 @@ int herc_main(int argc, char **argv) {
 	err_t err;
 
 	err = parse_cdm_args(argc, argv);
-	if (unlikely(err)) {
+	if (err) {
 		err_print(err);
 		err_free(err);
 		return 1;
@@ -46,6 +48,19 @@ int herc_main(int argc, char **argv) {
 }
 
 err_t parse_cdm_args(int argc, char **argv) {
+	size_t i;
+	const char *arg;
+	err_t err;
+
+	for (i = 1; i<argc; i++) {
+		if ( (arg = string_drop_prefix("--color=", argv[i])) ) {
+			err = logger_use_color(arg);
+			if (err) return err;
+		} else {
+			return err_general("unknown argument %s", argv[i]);
+		}
+	}
+
 	return OK;
 }
 
