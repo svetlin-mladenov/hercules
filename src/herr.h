@@ -13,6 +13,8 @@ typedef struct err_error* err_t;
 
 #define err_general(cause, fmt, ...) err_new(cause, fmt, ##__VA_ARGS__)
 
+#define err_nomem() err_general(NULL, "Out of mememory")
+
 void err_print(err_t );
 
 void err_free(err_t );

@@ -52,6 +52,7 @@ err_t err_new(err_t cause, const char *fmt, ...) {
 	return err;
 }
 
+
 /* PRIVATE FUNCTIONS */
 
 static err_t err_emergency_nomem() {

@@ -32,12 +32,14 @@ int try_running_tests_in_dso(const char *, void *, unsigned *, unsigned *);
 int try_running_tests_in_file(const char *, unsigned *, unsigned *);
 int try_running_tests_in_dir(const char *, unsigned *, unsigned *);
 
-err_t parse_cdm_args(int argc, char **argv);
+err_t parse_cdm_args(struct herc *h, int argc, char **argv);
+err_t herc_make(struct herc **h, int argc, char **argv);
 
 int herc_main(int argc, char **argv) {
 	err_t err;
+	struct herc *h;
 
-	err = parse_cdm_args(argc, argv);
+	err = herc_make(&h, argc, argv);
 	if (err) {
 		err_print(err);
 		err_free(err);
@@ -47,24 +49,13 @@ int herc_main(int argc, char **argv) {
 	return herc_run(argc, argv);
 }
 
-err_t parse_cdm_args(int argc, char **argv) {
-	size_t i;
-	const char *arg;
-	err_t err;
-
-	for (i = 1; i<argc; i++) {
-		err = OK;
-		if ( (arg = string_drop_prefix("--color=", argv[i])) ) {
-			err = logger_use_color(arg);
-		} else {
-			err = err_general(NULL, "unknown argument %s", argv[i]);
-		}
-		if (err) {
-			return err_general(err, "Could not parse command line arguments");
-		}
+err_t herc_make(struct herc **h, int argc, char **argv) {
+	*h = malloc(sizeof(struct herc));
+	if (*h==NULL) {
+		return err_nomem();
 	}
 
-	return OK;
+	return parse_cdm_args(*h, argc, argv);
 }
 
 int herc_run(int argc, char **argv) {
