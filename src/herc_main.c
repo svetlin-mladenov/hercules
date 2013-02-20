@@ -26,11 +26,11 @@
 
 #include "herc_string_utils.h"
 
-int herc_run(int argc, char **argv);
-int run_tests_in(const char *, unsigned *, unsigned *);
-int try_running_tests_in_dso(const char *, void *, unsigned *, unsigned *);
-int try_running_tests_in_file(const char *, unsigned *, unsigned *);
-int try_running_tests_in_dir(const char *, unsigned *, unsigned *);
+int herc_run(struct herc *h, int argc, char **argv);
+int run_tests_in(struct herc *h, const char *);
+int try_running_tests_in_dso(struct herc *h, const char *, void *);
+int try_running_tests_in_file(struct herc *h, const char *);
+int try_running_tests_in_dir(struct herc *h, const char *);
 
 err_t parse_cdm_args(struct herc *h, int argc, char **argv);
 err_t herc_make(struct herc **h, int argc, char **argv);
@@ -46,11 +46,11 @@ int herc_main(int argc, char **argv) {
 		return 1;
 	}
 
-	return herc_run(argc, argv);
+	return herc_run(h, argc, argv);
 }
 
 err_t herc_make(struct herc **h, int argc, char **argv) {
-	*h = malloc(sizeof(struct herc));
+	*h = calloc(1, sizeof(struct herc));
 	if (*h==NULL) {
 		return err_nomem();
 	}
@@ -58,36 +58,35 @@ err_t herc_make(struct herc **h, int argc, char **argv) {
 	return parse_cdm_args(*h, argc, argv);
 }
 
-int herc_run(int argc, char **argv) {
+int herc_run(struct herc *h, int argc, char **argv) {
 	const char *target;
-        unsigned failing_tests, tests_count;
         int err, ret;
 	
 	target = argv[0];
 
-	err = run_tests_in(target, &failing_tests, &tests_count);
+	err = run_tests_in(h, target);
 	if (err < 0) {
 		ret = err;
 		cprint(CPRINT_RED, "Unexpected error while trying to execute the tests\n");
-	} else if (tests_count == 0) {
+	} else if (h->run.total == 0) {
 		printf("No tests found in %s\n", target);
 		ret = 0;
 	} else {
-		ret = failing_tests;
-		cprint(failing_tests == 0 ? CPRINT_GREEN : CPRINT_RED,
-			"All tests: %-10dPassed Tests: %-10dFailed Tests: %-10d\n", tests_count, tests_count - failing_tests, failing_tests);
+		ret = h->run.failing;
+		cprint(h->run.failing == 0 ? CPRINT_GREEN : CPRINT_RED,
+			"All tests: %-10dPassed Tests: %-10dFailed Tests: %-10d\n", h->run.total, h->run.passing, h->run.failing);
 	}
 
 	return ret;
 }
 
-int run_tests_in(const char *target, unsigned *failing_tests, unsigned *tests_count) {
+int run_tests_in(struct herc *h, const char *target) {
 	struct stat target_stat;
 	int err;
 
 	//always return defined values.
-	*failing_tests = 0;
-	*tests_count = 0;
+	h->run.failing = 0;
+	h->run.total = 0;
 
 	err = stat(target, &target_stat);
 	if (err < 0) {
@@ -96,9 +95,9 @@ int run_tests_in(const char *target, unsigned *failing_tests, unsigned *tests_co
 	}
 
 	if (S_ISDIR(target_stat.st_mode)) {
-		return try_running_tests_in_dir(target, failing_tests, tests_count);
+		return try_running_tests_in_dir(h, target);
 	} else if (S_ISREG(target_stat.st_mode)) {
-		return try_running_tests_in_file(target, failing_tests, tests_count);
+		return try_running_tests_in_file(h, target);
 	}
 
 	//not a dir neither a regular file
@@ -106,7 +105,7 @@ int run_tests_in(const char *target, unsigned *failing_tests, unsigned *tests_co
 	return -1;
 }
 
-int try_running_tests_in_dir(const char *target, unsigned *failing_tests, unsigned *tests_count) {
+int try_running_tests_in_dir(struct herc *h, const char *target) {
 	DIR *dir;
 	struct dirent *dirent;
 	
@@ -117,7 +116,7 @@ int try_running_tests_in_dir(const char *target, unsigned *failing_tests, unsign
 	}
 
 	while ((dirent = readdir(dir)) != NULL) {
-		try_running_tests_in_file(dirent->d_name, failing_tests, tests_count);
+		try_running_tests_in_file(h, dirent->d_name);
 	}
 
 	closedir(dir);
@@ -145,7 +144,7 @@ void *dlopen_file(const char *filename, int flag) {
 	}*/
 }
 
-int try_running_tests_in_file(const char *file, unsigned *failing_tests, unsigned *tests_count) {
+int try_running_tests_in_file(struct herc *h, const char *file) {
 	void *handle;
 	int err;
 
@@ -155,21 +154,21 @@ int try_running_tests_in_file(const char *file, unsigned *failing_tests, unsigne
 		return 0;
 	}
 
-	err =  try_running_tests_in_dso(file, handle, failing_tests, tests_count);
+	err =  try_running_tests_in_dso(h, file, handle);
 
 	dlclose(handle);
 	return err;
 }
 
-int run_test(void *, test_desc *, unsigned *, unsigned *);
+int run_test(struct herc *h, void *, test_desc *);
 
-int try_running_tests_in_dso(const char *file, void *handle, unsigned *failing_tests, unsigned *tests_count) {
+int try_running_tests_in_dso(struct herc *h, const char *file, void *handle) {
 	struct cr_list *tests = get_testnames_in_file(file);
 	
 	cr_list_iter *iter = cr_list_iter_create(tests);
 	while (!cr_list_iter_past_end(iter)) {
 		test_desc *test = (test_desc*)cr_list_iter_get(iter);
-		run_test(handle, test, failing_tests, tests_count); 
+		run_test(h, handle, test); 
 		cr_list_iter_next(iter);
 	}
 	cr_list_iter_free(iter);
@@ -179,7 +178,7 @@ int try_running_tests_in_dso(const char *file, void *handle, unsigned *failing_t
 	return 0;
 }
 
-int run_test(void *handle, test_desc *desc, unsigned *failing_tests, unsigned *tests_count) {
+int run_test(struct herc *h, void *handle, test_desc *desc) {
 	struct timeval tv_start, tv_end;
 	double ellapsed_time;
 	int err = 0;
@@ -190,16 +189,17 @@ int run_test(void *handle, test_desc *desc, unsigned *failing_tests, unsigned *t
 		return -1;
 	}	
 
-	(*tests_count)++;
+	h->run.total++;
 	gettimeofday(&tv_start, NULL);
 	err = test_runner_run_test(test);
 	gettimeofday(&tv_end, NULL);
 	ellapsed_time = (float)(tv_end.tv_sec - tv_start.tv_sec) + (tv_end.tv_usec - tv_start.tv_usec)/1000000.0;
 	if (err < 0) {
 		cprint(CPRINT_RED, "Running test %s::%s... [%.2f s] %s\n", desc->suit, desc->test, ellapsed_time, test_runner_get_fail_msg());
-		(*failing_tests)++;
+		h->run.failing++;
 	} else {
 		printf("Running test %s::%s... [%.2f s] OK\n", desc->suit, desc->test, ellapsed_time);
+		h->run.passing++;
 	}
 
 	return 0;

@@ -15,6 +15,8 @@ typedef struct err_error* err_t;
 
 #define err_nomem() err_general(NULL, "Out of mememory")
 
+#define ERR_RET(EXPR) if ( (err = (EXPR)) != NULL ) {return err;}
+
 void err_print(err_t );
 
 void err_free(err_t );
