@@ -48,15 +48,17 @@ err_t parse_cdm_args(struct herc *h, int argc, char **argv) {
                 } \
         }
 
-static err_t parse_csv_string(char ***res, const char *arg) {
+static err_t parse_csv_string(char ***res, size_t *res_n, const char *arg) {
 	size_t i, begin, len, count, next;
 	char **array;
 
 	count=0;
 	__CSV_ITERATE_OVER_VALUES__(count++);
 	if (count <= 0) {
+		*res_n = 0;
 		*res = NULL;
 	} else {
+		*res_n = count;
 		array = calloc(count, sizeof(const char *));
 		if (array == NULL)
 			return err_nomem();
@@ -75,20 +77,24 @@ static err_t parse_csv_string(char ***res, const char *arg) {
 
 static err_t parse_suites(struct herc *h, const char *arg) {
 	char **res;
+	size_t n;
 	err_t err;
 
-	ERR_RET(parse_csv_string(&res, arg));
+	ERR_RET(parse_csv_string(&res, &n, arg));
 
-	h->suites_filter = res;
+	h->filter.suites.array = res;
+	h->filter.suites.n = n;
 	return OK;
 }
 
 static err_t parse_tests(struct herc *h, const char *arg) {
 	char **res;
+	size_t n;
 	err_t err;
 
-	ERR_RET(parse_csv_string(&res, arg));
+	ERR_RET(parse_csv_string(&res, &n, arg));
 
-	h->tests_filter = res;
+	h->filter.tests.array = res;
+	h->filter.tests.n = n;
 	return OK;
 }

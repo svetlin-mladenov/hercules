@@ -74,7 +74,7 @@ int herc_run(struct herc *h, int argc, char **argv) {
 	} else {
 		ret = h->run.failing;
 		cprint(h->run.failing == 0 ? CPRINT_GREEN : CPRINT_RED,
-			"All tests: %-10dPassed Tests: %-10dFailed Tests: %-10d\n", h->run.total, h->run.passing, h->run.failing);
+			"All tests: %-10dPassed Tests: %-10dFailed Tests: %-10dFiltered out Tests: %-10d\n", h->run.total, h->run.passing, h->run.failing, h->run.filtered);
 	}
 
 	return ret;
@@ -178,28 +178,45 @@ int try_running_tests_in_dso(struct herc *h, const char *file, void *handle) {
 	return 0;
 }
 
+bool does_testsuite_pass_filter(struct herc *h, test_desc *desc) {
+	return h->filter.suites.n == 0 || string_array_member((const char **)h->filter.suites.array, h->filter.suites.n, desc->suit);
+}
+
+bool does_testname_pass_filter(struct herc *h, test_desc *desc) {
+	return h->filter.tests.n == 0 || string_array_member((const char **)h->filter.tests.array, h->filter.tests.n, desc->test);
+}
+
+bool does_test_pass_filter(struct herc *h, test_desc *desc) {
+	return does_testsuite_pass_filter(h, desc) && does_testname_pass_filter(h, desc);
+}
+
 int run_test(struct herc *h, void *handle, test_desc *desc) {
 	struct timeval tv_start, tv_end;
 	double ellapsed_time;
 	int err = 0;
 
-	test_fn test = (test_fn)(intptr_t) dlsym(handle, desc->symname);
-	if (test == NULL) {
-		fprintf(stderr, "error while looking up symbol: %s\n", dlerror());
-		return -1;
-	}	
+	if (does_test_pass_filter(h, desc)) {
+		test_fn test = (test_fn)(intptr_t) dlsym(handle, desc->symname);
+		if (test == NULL) {
+			fprintf(stderr, "error while looking up symbol: %s\n", dlerror());
+			return -1;
+		}	
 
-	h->run.total++;
-	gettimeofday(&tv_start, NULL);
-	err = test_runner_run_test(test);
-	gettimeofday(&tv_end, NULL);
-	ellapsed_time = (float)(tv_end.tv_sec - tv_start.tv_sec) + (tv_end.tv_usec - tv_start.tv_usec)/1000000.0;
-	if (err < 0) {
-		cprint(CPRINT_RED, "Running test %s::%s... [%.2f s] %s\n", desc->suit, desc->test, ellapsed_time, test_runner_get_fail_msg());
-		h->run.failing++;
+		h->run.total++;
+		gettimeofday(&tv_start, NULL);
+		err = test_runner_run_test(test);
+		gettimeofday(&tv_end, NULL);
+		ellapsed_time = (float)(tv_end.tv_sec - tv_start.tv_sec) + (tv_end.tv_usec - tv_start.tv_usec)/1000000.0;
+		if (err < 0) {
+			cprint(CPRINT_RED, "Running test %s::%s... [%.2f s] %s\n", desc->suit, desc->test, ellapsed_time, test_runner_get_fail_msg());
+			h->run.failing++;
+		} else {
+			printf("Running test %s::%s... [%.2f s] OK\n", desc->suit, desc->test, ellapsed_time);
+			h->run.passing++;
+		}
 	} else {
-		printf("Running test %s::%s... [%.2f s] OK\n", desc->suit, desc->test, ellapsed_time);
-		h->run.passing++;
+		h->run.total++;
+		h->run.filtered++;
 	}
 
 	return 0;

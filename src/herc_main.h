@@ -9,10 +9,19 @@ struct herc {
 		size_t total;
 		size_t failing;
 		size_t passing;
+		size_t filtered;
 	} run;
-
-	char **suites_filter;
-	char **tests_filter;
+	
+	struct {
+		struct {
+			char **array;
+			size_t n;
+		} suites;
+		struct {
+			char **array;
+			size_t n;
+		} tests;
+	} filter;
 };
 
 int herc_main(int, char **);
