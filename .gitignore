@@ -11,3 +11,6 @@ demo.tests
 # vi
 .*~
 .*swp
+
+#dependencies
+deps/
