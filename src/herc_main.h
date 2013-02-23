@@ -3,6 +3,8 @@
 
 #include <stdlib.h>
 
+struct herc_rbe;
+
 struct herc {
 
 	struct {
@@ -22,6 +24,8 @@ struct herc {
 			size_t n;
 		} tests;
 	} filter;
+
+	struct herc_rbe *rbe;
 };
 
 int herc_main(int, char **);

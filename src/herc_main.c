@@ -25,6 +25,7 @@
 #include "branch_annotation.h"
 
 #include "herc_string_utils.h"
+#include "herc_rbe.h"
 
 int herc_run(struct herc *h, int argc, char **argv);
 int run_tests_in(struct herc *h, const char *);
@@ -49,21 +50,32 @@ int herc_main(int argc, char **argv) {
 	return herc_run(h, argc, argv);
 }
 
-err_t herc_make(struct herc **h, int argc, char **argv) {
-	*h = calloc(1, sizeof(struct herc));
-	if (*h==NULL) {
-		return err_nomem();
+err_t herc_make(struct herc **h_res, int argc, char **argv) {
+	err_t err;
+	struct herc *h;
+	*h_res = NULL;
+
+	h = calloc(1, sizeof(struct herc));
+	if (h==NULL) {
+		err = err_nomem();
+	} else if ( (err = parse_cdm_args(h, argc, argv)) ) {
+		free(h);
+	} else if ( (err = herc_make_default_rbe(&(h->rbe), h)) ) {
+		free(h);
+	} else {
+		*h_res = h;
 	}
 
-	return parse_cdm_args(*h, argc, argv);
+	return err;
 }
 
 int herc_run(struct herc *h, int argc, char **argv) {
 	const char *target;
-        int err, ret;
+    int err, ret;
 	
 	target = argv[0];
 
+	herc_rbe_invoke(h->rbe, start, h);
 	err = run_tests_in(h, target);
 	if (err < 0) {
 		ret = err;
@@ -73,9 +85,8 @@ int herc_run(struct herc *h, int argc, char **argv) {
 		ret = 0;
 	} else {
 		ret = h->run.failing;
-		cprint(h->run.failing == 0 ? CPRINT_GREEN : CPRINT_RED,
-			"All tests: %-10dPassed Tests: %-10dFailed Tests: %-10dFiltered out Tests: %-10d\n", h->run.total, h->run.passing, h->run.failing, h->run.filtered);
 	}
+	herc_rbe_invoke(h->rbe, end, h);
 
 	return ret;
 }
@@ -154,7 +165,9 @@ int try_running_tests_in_file(struct herc *h, const char *file) {
 		return 0;
 	}
 
+	herc_rbe_invoke(h->rbe, start_file, file);
 	err =  try_running_tests_in_dso(h, file, handle);
+	herc_rbe_invoke(h->rbe, end_file, h);
 
 	dlclose(handle);
 	return err;
@@ -168,7 +181,9 @@ int try_running_tests_in_dso(struct herc *h, const char *file, void *handle) {
 	cr_list_iter *iter = cr_list_iter_create(tests);
 	while (!cr_list_iter_past_end(iter)) {
 		test_desc *test = (test_desc*)cr_list_iter_get(iter);
+		herc_rbe_invoke(h->rbe, start_test, test);
 		run_test(h, handle, test); 
+		herc_rbe_invoke(h->rbe, end_test, test);
 		cr_list_iter_next(iter);
 	}
 	cr_list_iter_free(iter);
@@ -207,11 +222,12 @@ int run_test(struct herc *h, void *handle, test_desc *desc) {
 		err = test_runner_run_test(test);
 		gettimeofday(&tv_end, NULL);
 		ellapsed_time = (float)(tv_end.tv_sec - tv_start.tv_sec) + (tv_end.tv_usec - tv_start.tv_usec)/1000000.0;
+		desc->status = (err < 0) ? FAILED : PASSED;
+		desc->ellapsed_time = ellapsed_time;
+		desc->fail_msg = test_runner_get_fail_msg();
 		if (err < 0) {
-			cprint(CPRINT_RED, "Running test %s::%s... [%.2f s] %s\n", desc->suit, desc->test, ellapsed_time, test_runner_get_fail_msg());
 			h->run.failing++;
 		} else {
-			printf("Running test %s::%s... [%.2f s] OK\n", desc->suit, desc->test, ellapsed_time);
 			h->run.passing++;
 		}
 	} else {
