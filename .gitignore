@@ -3,7 +3,6 @@
 *.os
 *.so
 *.a
-herc
 demo.tests
 
 # scons
