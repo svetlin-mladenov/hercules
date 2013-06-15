@@ -15,9 +15,12 @@
 #include <cryad/list.h>
 #include <cryad/slist.h>
 
+#include "table.h"
+
 #include "test_finder.h"
 #include "test_runner.h"
 #include "test_desc.h"
+#include "suite_desc.h"
 
 #include "logger.h"
 #include "herr.h"
@@ -176,20 +179,39 @@ int try_running_tests_in_file(struct herc *h, const char *file) {
 int run_test(struct herc *h, void *, test_desc *);
 
 int try_running_tests_in_dso(struct herc *h, const char *file, void *handle) {
-	struct cr_list *tests = get_testnames_in_file(file);
+	size_t i = 0;
+
+	//get the suites
+	Table_T suitesTable = get_testnames_in_file(file);
+
+	//convert to array for easier sorting and iteration
+	unsigned nSuites = Table_length(suitesTable);
+	void **suites = Table_toArray(suitesTable, 0);
+	Table_free(&suitesTable);
 	
-	cr_list_iter *iter = cr_list_iter_create(tests);
-	while (!cr_list_iter_past_end(iter)) {
-		test_desc *test = (test_desc*)cr_list_iter_get(iter);
-		herc_rbe_invoke(h->rbe, start_test, test);
-		run_test(h, handle, test); 
-		herc_rbe_invoke(h->rbe, end_test, test);
-		cr_list_iter_next(iter);
+	//sort
+	qsort(suites, nSuites, 2*sizeof(suites[0]), strcmp);
+
+	//iterate and run
+	for (i = 0; i<nSuites; i++) {
+		suite_desc *suite = suites[i*2+1];
+		cr_list_iter *iter = cr_list_iter_create(suite->tests);
+		while (!cr_list_iter_past_end(iter)) {
+			test_desc *test = (test_desc*)cr_list_iter_get(iter);
+			herc_rbe_invoke(h->rbe, start_test, test);
+			run_test(h, handle, test);
+			herc_rbe_invoke(h->rbe, end_test, test);
+			cr_list_iter_next(iter);
+		}
+		cr_list_iter_free(iter);
 	}
-	cr_list_iter_free(iter);
+
+	for (i = 0; i<nSuites; i++) {
+		suite_desc_free(suites[i*2+1]);
+	}
 
 
-	cr_list_free(tests);
+	free(suites);
 	return 0;
 }
 

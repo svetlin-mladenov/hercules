@@ -14,9 +14,24 @@
 #include <cryad/slist.h>
 
 #include "mangler.h"
+#include "suite_desc.h"
 #include "test_desc.h"
 
-struct cr_list *get_testnames_in_file(const char *file) {
+static unsigned str_hash(const char *str) {
+	unsigned hash = 0;
+	size_t i = 0;
+
+	if (str == NULL)
+		return hash;
+
+	for (i = 0; str[i]; i++) {
+		hash = 31*hash + str[i];
+	}
+
+	return hash;
+}
+
+Table_T get_testnames_in_file(const char *file) {
 	//for more info see http://sourceforge.net/apps/trac/elftoolchain/browser/trunk/readelf/readelf.c dump_symtab
 	Elf *e;
 	GElf_Sym sym;
@@ -28,7 +43,8 @@ struct cr_list *get_testnames_in_file(const char *file) {
 
 	char *sym_name;
 
-	cr_list *list = cr_slist_create((void (*)(void*))test_desc_free);
+	//cr_list *list = cr_slist_create((void (*)(void*))test_desc_free);
+	Table_T suites = Table_new(0, (int (*)(const void *, const void *))strcmp, (unsigned int (*)(const void *))str_hash);
 
 	if (elf_version(EV_CURRENT) == EV_NONE) {
 		warnx("ELF initialization failed: %s", elf_errmsg(-1));
@@ -53,7 +69,7 @@ struct cr_list *get_testnames_in_file(const char *file) {
 	scn = NULL;
 	while ((scn = elf_nextscn(e, scn)) != NULL) {
 		if (gelf_getshdr(scn, &shdr) != &shdr) {
-			warn("error while gettin section header. scipping the current section.");
+			warn("error while getting section header. skipping the current section.");
 			continue;
 		}
 
@@ -67,7 +83,17 @@ struct cr_list *get_testnames_in_file(const char *file) {
 				//TODO check if the symbol is a function
 				sym_name = elf_strptr(e, shdr.sh_link, sym.st_name);
 				if (mangler_is_test(sym_name)) {
-					cr_list_add(list, test_desc_create(sym_name));
+					//ensure suite
+					char * suite_name = mangler_extract_suite(sym_name);
+					suite_desc *suite = Table_get(suites, suite_name);
+					if (suite == NULL) {
+						suite = suite_desc_new(suite_name);
+						Table_put(suites, suite->name, suite);
+					}
+					free(suite_name);
+
+					cr_list_add(suite->tests, test_desc_create(sym_name));
+					//cr_list_add(list, test_desc_create(sym_name));
 				}
 			}	
 		}
@@ -76,6 +102,7 @@ struct cr_list *get_testnames_in_file(const char *file) {
 	elf_end(e);
 	close(fd);
 
-        return list;
+        //return list;
+	return suites;
 }
 

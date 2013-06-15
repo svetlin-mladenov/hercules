@@ -1,6 +1,10 @@
 #ifndef HERC_HERC_H
 #define HERC_HERC_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include <stdlib.h>
 #include <stdint.h>
 #include <string.h>
@@ -59,5 +63,8 @@ void herc_fail(const char *, ...);
 		} \
 	} while(0);
 
+#ifdef __cplusplus
+}
+#endif
 
 #endif 
