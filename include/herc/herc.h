@@ -13,16 +13,23 @@ extern "C" {
 #define _HERC_CASE_NAME_DELIMITER_STR "_D5a_"
 
 /*NOTE if you change the manglin schema you must also change the demangling schema in hercules-source-tree/src/mangler.c*/
-#define _HERC_MANGLE(test_case, delimiter, test_name) __HtEsT_ ## test_case ## _D5a_ ## test_name
+#define _HERC_MANGLE(test_prefix, test_case, delimiter, test_name) test_prefix ## test_case ## _D5a_ ## test_name
 
 #ifdef __cplusplus
-#define HTEST(test_case, test_name) \
-	extern "C" {void  _HERC_MANGLE(test_case, _HERC_CASE_NAME_DELIMITER, test_name) ();} \
-	void  _HERC_MANGLE(test_case, _HERC_CASE_NAME_DELIMITER, test_name) ()
+#define _HERC_DECLARE_HERC_SYMBOL(return_type, test_prefix, test_case, test_name) \
+	extern "C" {return_type  _HERC_MANGLE(test_prefix, test_case, _HERC_CASE_NAME_DELIMITER, test_name) (void*);} \
+	return_type  _HERC_MANGLE(test_prefix, test_case, _HERC_CASE_NAME_DELIMITER, test_name) (void *_fixture)
 #else
-#define HTEST(test_case, test_name) \
-        void  _HERC_MANGLE(test_case, _HERC_CASE_NAME_DELIMITER, test_name) ()
+#define _HERC_DECLARE_HERC_SYMBOL(return_type, test_prefix, test_case, test_name) \
+		return_type  _HERC_MANGLE(test_prefix, test_case, _HERC_CASE_NAME_DELIMITER, test_name) ( void *_fixture)
 #endif
+
+#define HTEST(test_case, test_name) _HERC_DECLARE_HERC_SYMBOL(void, __HtEsT_, test_case, test_name)
+#define HBEFORE_SUITE(test_case) _HERC_DECLARE_HERC_SYMBOL(void*, __HbEfOrSuItE_, test_case, _)
+#define HAFTER_SUITE(test_case) _HERC_DECLARE_HERC_SYMBOL(void, __HaFtErSuItE_, test_case, _)
+#define HBEFORE_TEST(test_case) _HERC_DECLARE_HERC_SYMBOL(void*,__HbEfOrTeSt_, test_case, _)
+#define HAFTER_TEST(test_case) _HERC_DECLARE_HERC_SYMBOL(void,__HaFtErTeSt_, test_case, _)
+
 
 void herc_fail(const char *, ...);
 

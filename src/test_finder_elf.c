@@ -2,6 +2,7 @@
 
 #include <libelf.h>
 #include <gelf.h>
+#include <dlfcn.h>
 
 //TODO use some custome mechanism
 #include <err.h>
@@ -12,6 +13,8 @@
 
 #include <cryad/list.h>
 #include <cryad/slist.h>
+
+#include <stdio.h>
 
 #include "mangler.h"
 #include "suite_desc.h"
@@ -31,7 +34,18 @@ static unsigned str_hash(const char *str) {
 	return hash;
 }
 
-Table_T get_testnames_in_file(const char *file) {
+static suite_desc* ensure_suite(Table_T suites, const char *sym_name, enum symbol_type stype) {
+	char * suite_name = mangler_extract_suite(sym_name, stype);
+	suite_desc *suite = Table_get(suites, suite_name);
+	if (suite == NULL ) {
+		suite = suite_desc_new(suite_name);
+		Table_put(suites, suite->name, suite);
+	}
+	free(suite_name);
+	return suite;
+}
+
+Table_T get_testnames_in_file(const char *file, void *dso_handle) {
 	//for more info see http://sourceforge.net/apps/trac/elftoolchain/browser/trunk/readelf/readelf.c dump_symtab
 	Elf *e;
 	GElf_Sym sym;
@@ -82,20 +96,24 @@ Table_T get_testnames_in_file(const char *file) {
 				si++;
 				//TODO check if the symbol is a function
 				sym_name = elf_strptr(e, shdr.sh_link, sym.st_name);
-				if (mangler_is_test(sym_name)) {
-					//ensure suite
-					char * suite_name = mangler_extract_suite(sym_name);
-					suite_desc *suite = Table_get(suites, suite_name);
-					if (suite == NULL) {
-						suite = suite_desc_new(suite_name);
-						Table_put(suites, suite->name, suite);
-					}
-					free(suite_name);
-
+				enum symbol_type stype = mangler_get_symbol_type(sym_name);
+				if (stype == SYMBOL_IS_UNKNOWN) continue;
+				suite_desc *suite = ensure_suite(suites, sym_name, stype);
+				if (stype == SYMBOL_IS_TEST) {
 					cr_list_add(suite->tests, test_desc_create(sym_name));
-					//cr_list_add(list, test_desc_create(sym_name));
+				} else if (stype == SYMBOL_IS_BEFORE_TEST) {
+					suite->before_test = dlsym(dso_handle, sym_name);
+				} else if (stype == SYMBOL_IS_AFTER_TEST) {
+					suite->after_test = dlsym(dso_handle, sym_name);
+				} else if (stype == SYMBOL_IS_BEFORE_SUITE) {
+					suite->before_suite = dlsym(dso_handle, sym_name);
+				} else if (stype == SYMBOL_IS_AFTER_SUITE) {
+					suite->after_suite = dlsym(dso_handle, sym_name);
+				} else {
+					printf("This shouldn't happen.\n");
+					exit(1);
 				}
-			}	
+			}
 		}
 	}
 	

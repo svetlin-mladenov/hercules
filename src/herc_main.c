@@ -176,13 +176,39 @@ int try_running_tests_in_file(struct herc *h, const char *file) {
 	return err;
 }
 
-int run_test(struct herc *h, void *, test_desc *);
+int run_test(struct herc *h, void *, test_desc *, void *);
+
+static void *invoke_before_suite(suite_desc *suite) {
+	if (suite && suite->before_suite) {
+		return suite->before_suite(NULL);//pass default fixture just for to simplify implementation
+	} else {
+		return NULL;
+	}
+}
+
+static void invoke_after_suite(suite_desc *suite, void *suite_fixture) {
+	if (suite && suite->after_suite)
+		suite->after_suite(suite_fixture);
+}
+
+static void *invoke_before_test(suite_desc *suite, void *suite_fixture) {
+	if (suite && suite->before_test) {
+		return suite->before_test(suite_fixture);
+	} else {
+		return suite_fixture;
+	}
+}
+
+static void invoke_after_test(suite_desc *suite, void *test_fixture) {
+	if (suite && suite->after_test)
+		suite->after_test(test_fixture);
+}
 
 int try_running_tests_in_dso(struct herc *h, const char *file, void *handle) {
 	size_t i = 0;
-
+	void *suite_fixture, *test_fixture;
 	//get the suites
-	Table_T suitesTable = get_testnames_in_file(file);
+	Table_T suitesTable = get_testnames_in_file(file, handle);
 
 	//convert to array for easier sorting and iteration
 	unsigned nSuites = Table_length(suitesTable);
@@ -190,20 +216,24 @@ int try_running_tests_in_dso(struct herc *h, const char *file, void *handle) {
 	Table_free(&suitesTable);
 	
 	//sort
-	qsort(suites, nSuites, 2*sizeof(suites[0]), strcmp);
+	qsort(suites, nSuites, 2*sizeof(suites[0]), (int (*)(const void *, const void *))strcmp);
 
 	//iterate and run
 	for (i = 0; i<nSuites; i++) {
 		suite_desc *suite = suites[i*2+1];
+		suite_fixture = invoke_before_suite(suite);//TODO call RBE callback
 		cr_list_iter *iter = cr_list_iter_create(suite->tests);
 		while (!cr_list_iter_past_end(iter)) {
+			test_fixture = invoke_before_test(suite, suite_fixture);
 			test_desc *test = (test_desc*)cr_list_iter_get(iter);
 			herc_rbe_invoke(h->rbe, start_test, test);
-			run_test(h, handle, test);
+			run_test(h, handle, test, test_fixture);
 			herc_rbe_invoke(h->rbe, end_test, test);
+			invoke_after_test(suite, test_fixture);
 			cr_list_iter_next(iter);
 		}
 		cr_list_iter_free(iter);
+		invoke_after_suite(suite, suite_fixture);
 	}
 
 	for (i = 0; i<nSuites; i++) {
@@ -227,7 +257,7 @@ bool does_test_pass_filter(struct herc *h, test_desc *desc) {
 	return does_testsuite_pass_filter(h, desc) && does_testname_pass_filter(h, desc);
 }
 
-int run_test(struct herc *h, void *handle, test_desc *desc) {
+int run_test(struct herc *h, void *handle, test_desc *desc, void *fixture) {
 	struct timeval tv_start, tv_end;
 	double ellapsed_time;
 	int err = 0;
@@ -241,7 +271,7 @@ int run_test(struct herc *h, void *handle, test_desc *desc) {
 
 		h->run.total++;
 		gettimeofday(&tv_start, NULL);
-		err = test_runner_run_test(test);
+		err = test_runner_run_test(test, fixture);
 		gettimeofday(&tv_end, NULL);
 		ellapsed_time = (float)(tv_end.tv_sec - tv_start.tv_sec) + (tv_end.tv_usec - tv_start.tv_usec)/1000000.0;
 		desc->status = (err < 0) ? FAILED : PASSED;

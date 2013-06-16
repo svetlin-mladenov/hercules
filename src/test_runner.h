@@ -3,9 +3,9 @@
 
 #include "herc/herc.h"
 
-typedef void (*test_fn) (void);
+typedef void (*test_fn) (void *);
 
-int test_runner_run_test(test_fn test);
+int test_runner_run_test(test_fn test, void *fixture);
 
 const char *test_runner_get_fail_msg();
 

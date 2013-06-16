@@ -8,8 +8,8 @@
 test_desc *test_desc_create(const char *symname) {
 	test_desc *test = calloc(1, sizeof(test_desc));
 	test->symname = strdup(symname);
-	test->suit = mangler_extract_suite(symname);
-	test->test = mangler_extract_test(symname);
+	test->suit = mangler_extract_suite(symname, SYMBOL_IS_TEST);
+	test->test = mangler_extract_test(symname, SYMBOL_IS_TEST);
 	return test;
 }
 

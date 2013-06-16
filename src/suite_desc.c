@@ -7,7 +7,7 @@
 #include <stddef.h>
 
 suite_desc *suite_desc_new(const char *name) {
-	suite_desc *suite = malloc(sizeof(suite_desc));
+	suite_desc *suite = calloc(1, sizeof(suite_desc));
 	suite->name = strdup(name);
 	suite->tests = cr_slist_create((void (*)(void*))test_desc_free);
 	return suite;

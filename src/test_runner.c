@@ -11,7 +11,7 @@ jmp_buf abort_test_point;
 
 char *errmsg = NULL;
 
-int test_runner_run_test(test_fn test) {
+int test_runner_run_test(test_fn test, void *fixture) {
 	if (errmsg != NULL) {
 		free(errmsg);
 		errmsg = NULL;
@@ -22,7 +22,7 @@ int test_runner_run_test(test_fn test) {
                 /*the test has failed*/
                 return -1;
         } else {
-                test();
+                test(fixture);
                 return 0;
         }
 }
