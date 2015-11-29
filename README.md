@@ -105,6 +105,7 @@ HTEST(suite, test) {
     myassert(...);
     ...
 }
+```
 
 FAQ
 --------
